@@ -44,16 +44,49 @@ func (m *MockDataServiceSuccessful) ReadOne(id int, ctx context.Context) (*model
 	}, nil
 }
 
-func (m *MockDataServiceSuccessful) Create(data *models.Data, ctx context.Context) error {
-	return nil
-}
-
 func (m *MockDataServiceSuccessful) Update(data *models.Data, ctx context.Context) (int64, error) {
 	return 1, nil
 }
 
 func (m *MockDataServiceSuccessful) Delete(data *models.Data, ctx context.Context) (int64, error) {
 	return 1, nil
+}
+
+func (m *MockDataServiceSuccessful) Create(data *models.Data, ctx context.Context) error {
+	return nil
+}
+
+// * Threshold-specific mocks *
+func (m *MockDataServiceSuccessful) CreateThreshold(threshold *models.Threshold, ctx context.Context) error {
+	// Return nil to signify successful creation
+	return nil
+}
+
+func (m *MockDataServiceSuccessful) ReadThreshold(id int, ctx context.Context) (*models.Threshold, error) {
+	// Return a sample threshold object
+	return &models.Threshold{
+		ID:      id,
+		MinValue: 10.0,
+		MaxValue: 50.0,
+		SensorType:    "Temperature",
+	}, nil
+}
+func (m *MockDataServiceSuccessful) UpdateThreshold(threshold *models.Threshold, ctx context.Context) (int64, error) {
+	// Return 1 to signify a successful update with a placeholder record ID
+	return 1, nil
+}
+
+func (m *MockDataServiceSuccessful) DeleteThreshold(id int, ctx context.Context) (int64, error) {
+	// Return 1 to signify a successful delete of the threshold
+	return 1, nil
+}
+
+func (m *MockDataServiceSuccessful) GetAllThresholds(page, rowsPerPage int, ctx context.Context) ([]*models.Threshold, error) {
+	// Return a list of sample thresholds
+	return []*models.Threshold{
+		{ID: 1, MinValue: 10.0, MaxValue: 50.0, SensorType: "Temperature"},
+		{ID: 2, MinValue: 20.0, MaxValue: 60.0, SensorType: "Humidity"},
+	}, nil
 }
 
 func (m *MockDataServiceSuccessful) ValidateData(data *models.Data) error {
@@ -84,6 +117,31 @@ func (m *MockDataServiceNotFound) Delete(data *models.Data, ctx context.Context)
 	return 0, nil
 }
 
+func (m *MockDataServiceNotFound) CreateThreshold(threshold *models.Threshold, ctx context.Context) error {
+	// No action, implicitly returning nil for error
+	return nil
+}
+
+func (m *MockDataServiceNotFound) ReadThreshold(id int, ctx context.Context) (*models.Threshold, error) {
+	// Simulate a scenario where the threshold is not found
+	return nil, nil
+}
+
+func (m *MockDataServiceNotFound) UpdateThreshold(threshold *models.Threshold, ctx context.Context) (int64, error) {
+	// Simulate no records affected for an update attempt
+	return 0, nil
+}
+
+func (m *MockDataServiceNotFound) DeleteThreshold(id int, ctx context.Context) (int64, error) {
+	// Simulate no records affected for delete attempt
+	return 0, nil
+}
+
+func (m *MockDataServiceNotFound) GetAllThresholds(page, rowsPerPage int, ctx context.Context) ([]*models.Threshold, error) {
+	// Return empty list for no thresholds found
+	return []*models.Threshold{}, nil
+}
+
 func (m *MockDataServiceNotFound) ValidateData(data *models.Data) error {
 	return nil
 }
@@ -110,6 +168,32 @@ func (m *MockDataServiceError) Update(data *models.Data, ctx context.Context) (i
 func (m *MockDataServiceError) Delete(data *models.Data, ctx context.Context) (int64, error) {
 	return 0, DataError{Message: "Error deleting data."}
 }
+// Mock for CreateThreshold - returning a DataError
+func (m *MockDataServiceError) CreateThreshold(threshold *models.Threshold, ctx context.Context) error {
+	return DataError{Message: "Error creating threshold."}
+}
+
+// Mock for ReadThreshold - returning a DataError
+func (m *MockDataServiceError) ReadThreshold(id int, ctx context.Context) (*models.Threshold, error) {
+	return nil, DataError{Message: "Error reading threshold."}
+}
+
+// Mock for UpdateThreshold - returning a DataError
+func (m *MockDataServiceError) UpdateThreshold(threshold *models.Threshold, ctx context.Context) (int64, error) {
+	return 0, DataError{Message: "Error updating threshold."}
+}
+
+// Mock for DeleteThreshold - returning a DataError
+func (m *MockDataServiceError) DeleteThreshold(id int, ctx context.Context) (int64, error) {
+	return 0, DataError{Message: "Error deleting threshold."}
+}
+
+// Mock for GetAllThresholds - returning a DataError
+func (m *MockDataServiceError) GetAllThresholds(page, rowsPerPage int, ctx context.Context) ([]*models.Threshold, error) {
+	return nil, DataError{Message: "Error retrieving thresholds."}
+}
+
+
 
 func (m *MockDataServiceError) ValidateData(data *models.Data) error {
 	return nil

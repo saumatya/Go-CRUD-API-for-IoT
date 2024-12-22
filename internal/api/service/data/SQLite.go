@@ -9,11 +9,13 @@ import (
 // * Implementation of DataService for SQLite database *
 type DataServiceSQLite struct {
 	repo models.DataRepository
+	thresholdRepo    models.ThresholdRepository 
 }
 
-func NewDataServiceSQLite(repo models.DataRepository) *DataServiceSQLite {
+func NewDataServiceSQLite(repo models.DataRepository, thresholdRepo models.ThresholdRepository) *DataServiceSQLite {
 	return &DataServiceSQLite{
 		repo: repo,
+		thresholdRepo: thresholdRepo,
 	}
 }
 
@@ -55,6 +57,18 @@ func (ds *DataServiceSQLite) Update(data *models.Data, ctx context.Context) (int
 func (ds *DataServiceSQLite) Delete(data *models.Data, ctx context.Context) (int64, error) {
 	return ds.repo.Delete(data, ctx)
 }
+func (ds *DataServiceSQLite) DeleteThreshold(id int, ctx context.Context) (int64, error) {
+    // Create a threshold object with just the ID
+    threshold := &models.Threshold{ID: id}
+    
+    // Call the repository's Delete method
+    result, err := ds.thresholdRepo.Delete(threshold, ctx)
+    if err != nil {
+        return 0, err
+    }
+    return result, nil
+}
+
 
 func (ds *DataServiceSQLite) ValidateData(data *models.Data) error {
 	var errMsg string
@@ -81,4 +95,68 @@ func (ds *DataServiceSQLite) ValidateData(data *models.Data) error {
 		return DataError{Message: errMsg}
 	}
 	return nil
+}
+func (ds *DataServiceSQLite) CreateThreshold(threshold *models.Threshold, ctx context.Context) error {
+	// Example logic for creating a Threshold
+	if threshold.SensorType == "" {
+		return DataError{Message: "SensorType is required."}
+	}
+	if threshold.MinValue >= threshold.MaxValue {
+		return DataError{Message: "MinValue should be less than MaxValue."}
+	}
+	
+	return ds.thresholdRepo.Create(threshold, ctx)
+}
+func (ds *DataServiceSQLite) GetAllThresholds(page, rowsPerPage int, ctx context.Context) ([]*models.Threshold, error) {
+    // Call the repository method to get all thresholds with pagination
+    thresholds, err := ds.thresholdRepo.ReadMany(page, rowsPerPage, ctx)
+    if err != nil {
+        return nil, err
+    }
+    return thresholds, nil
+}
+
+// Read a single threshold by ID
+func (ds *DataServiceSQLite) ReadThreshold(id int, ctx context.Context) (*models.Threshold, error) {
+    threshold, err := ds.thresholdRepo.ReadOne(id, ctx)
+    if err != nil {
+        return nil, err
+    }
+    return threshold, nil
+}
+
+// Get all thresholds with pagination
+// func (ds *DataServiceSQLite) GetAllThresholds(page, rowsPerPage int, ctx context.Context) ([]*models.Threshold, error) {
+//     thresholds, err := ds.thresholdRepo.ReadMany(page, rowsPerPage, ctx)
+//     if err != nil {
+//         return nil, err
+//     }
+//     return thresholds, nil
+// }
+
+// Create a new threshold
+// func (ds *DataServiceSQLite) CreateThreshold(threshold *models.Threshold, ctx context.Context) error {
+//     if err := ds.validateThreshold(threshold); err != nil {
+//         return err
+//     }
+//     return ds.thresholdRepo.Create(threshold, ctx)
+// }
+
+// Update an existing threshold
+func (ds *DataServiceSQLite) UpdateThreshold(threshold *models.Threshold, ctx context.Context) (int64, error) {
+    if err := ds.validateThreshold(threshold); err != nil {
+        return 0, err
+    }
+    return ds.thresholdRepo.Update(threshold, ctx)
+}
+
+// Helper function to validate threshold data
+func (ds *DataServiceSQLite) validateThreshold(threshold *models.Threshold) error {
+    if threshold.SensorType == "" {
+        return DataError{Message: "SensorType is required"}
+    }
+    if threshold.MinValue >= threshold.MaxValue {
+        return DataError{Message: "MinValue must be less than MaxValue"}
+    }
+    return nil
 }

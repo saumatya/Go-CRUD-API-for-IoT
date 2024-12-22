@@ -12,6 +12,14 @@ type DataService interface {
 	Update(data *models.Data, ctx context.Context) (int64, error)
 	Delete(data *models.Data, ctx context.Context) (int64, error)
 	ValidateData(data *models.Data) error
+
+	// Threshold methods
+	CreateThreshold(threshold *models.Threshold, ctx context.Context) error
+	ReadThreshold(id int, ctx context.Context) (*models.Threshold, error)
+	UpdateThreshold(threshold *models.Threshold, ctx context.Context) (int64, error)
+	DeleteThreshold(id int, ctx context.Context) (int64, error)
+	GetAllThresholds(page, rowsPerPage int, ctx context.Context) ([]*models.Threshold, error)
+
 }
 
 type DataError struct {

@@ -16,11 +16,18 @@ type Server struct {
 }
 
 func NewServer(ctx context.Context, sf *service.ServiceFactory, logger *log.Logger) *Server {
-
 	mux := http.NewServeMux()
+
+	// Setup data-related handlers
 	err := setupDataHandlers(mux, sf, logger)
 	if err != nil {
 		logger.Fatalf("Error setting up data handlers: %v", err)
+	}
+
+	// Setup threshold-related handlers
+	err = setupThresholdHandlers(mux, sf, logger)
+	if err != nil {
+		logger.Fatalf("Error setting up threshold handlers: %v", err)
 	}
 
 	middlewares := []middleware.Middleware{
@@ -47,31 +54,84 @@ func (api *Server) ListenAndServe(addr string) error {
 	return api.HTTPServer.ListenAndServe()
 }
 
-// * REST API handlers
+// * REST API handlers for Data *
 func setupDataHandlers(mux *http.ServeMux, sf *service.ServiceFactory, logger *log.Logger) error {
-
 	ds, err := sf.CreateDataService(service.SQLiteDataService)
 	if err != nil {
 		return err
 	}
 
-	mux.HandleFunc("OPTIONS /*", func(w http.ResponseWriter, r *http.Request) {
-		data.OptionsHandler(w, r)
+	mux.HandleFunc("/data", func(w http.ResponseWriter, r *http.Request) {
+		// Handle the OPTIONS request to allow for CORS or pre-flight checks
+		if r.Method == "OPTIONS" {
+			data.OptionsHandler(w, r)
+		} else if r.Method == "POST" {
+			data.PostHandler(w, r, logger, ds)
+		} else if r.Method == "PUT" {
+			data.PutHandler(w, r, logger, ds)
+		} else if r.Method == "GET" {
+			data.GetHandler(w, r, logger, ds)
+		} else {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
 	})
-	mux.HandleFunc("POST /data", func(w http.ResponseWriter, r *http.Request) {
-		data.PostHandler(w, r, logger, ds)
+
+	// Use a separate route for handling the ID-based actions
+	mux.HandleFunc("/data/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			data.GetByIDHandler(w, r, logger, ds)
+		} else if r.Method == "DELETE" {
+			data.DeleteHandler(w, r, logger, ds)
+		} else {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
 	})
-	mux.HandleFunc("PUT /data", func(w http.ResponseWriter, r *http.Request) {
-		data.PutHandler(w, r, logger, ds)
+
+	return nil
+}
+
+// * REST API handlers for Threshold *
+func setupThresholdHandlers(mux *http.ServeMux, sf *service.ServiceFactory, logger *log.Logger) error {
+	ds, err := sf.CreateDataService(service.SQLiteDataService)
+	if err != nil {
+		return err
+	}
+
+	// Define the Threshold-specific routes and handlers
+	// mux.HandleFunc("/threshold", func(w http.ResponseWriter, r *http.Request) {
+	// 	if r.Method == "POST" {
+	// 		data.PostThresholdHandler(w, r, logger, ds)
+	// 	} else if r.Method == "PUT" {
+	// 		data.UpdateThresholdHandler(w, r, logger, ds)
+	// 	} else {
+	// 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+	// 	}
+	// })
+
+	mux.HandleFunc("/threshold", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			data.PostThresholdHandler(w, r, logger, ds)
+		} else if r.Method == "PUT" {
+			data.UpdateThresholdHandler(w, r, logger, ds)
+		} else if r.Method == "GET" {
+			// Add the handler for getting all thresholds
+			data.GetThresholdHandler(w, r, logger, ds)
+		} else {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
 	})
-	mux.HandleFunc("GET /data", func(w http.ResponseWriter, r *http.Request) {
-		data.GetHandler(w, r, logger, ds)
+	
+
+	// Handle DELETE and GET with ID for thresholds
+	mux.HandleFunc("/threshold/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "DELETE" {
+			data.DeleteThresholdHandler(w, r, logger, ds)
+		} else if r.Method == "GET" {
+			data.GetThresholdHandler(w, r, logger, ds)
+		} else {
+			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		}
 	})
-	mux.HandleFunc("GET /data/{id}", func(w http.ResponseWriter, r *http.Request) {
-		data.GetByIDHandler(w, r, logger, ds)
-	})
-	mux.HandleFunc("DELETE /data/{id}", func(w http.ResponseWriter, r *http.Request) {
-		data.DeleteHandler(w, r, logger, ds)
-	})
-	return err
+
+	return nil
 }

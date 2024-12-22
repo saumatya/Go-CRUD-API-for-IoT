@@ -30,15 +30,19 @@ func NewServiceFactory(db DAL.SQLDatabase, logger *log.Logger, ctx context.Conte
 }
 
 func (sf *ServiceFactory) CreateDataService(serviceType DataServiceType) (*service.DataServiceSQLite, error) {
-
 	switch serviceType {
-
 	case SQLiteDataService:
-		repo, err := SQLite.NewDataRepository(sf.db, sf.ctx)
+		// Create both repositories
+		dataRepo, err := SQLite.NewDataRepository(sf.db, sf.ctx)
 		if err != nil {
 			return nil, err
 		}
-		ds := service.NewDataServiceSQLite(repo)
+		thresholdRepo, err := SQLite.NewThresholdRepository(sf.db, sf.ctx)
+		if err != nil {
+			return nil, err
+		}
+		// Create the DataServiceSQLite with both repositories
+		ds := service.NewDataServiceSQLite(dataRepo, thresholdRepo)
 		return ds, nil
 	default:
 		return nil, service.DataError{Message: "Invalid data service type."}
