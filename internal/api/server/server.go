@@ -97,38 +97,25 @@ func setupThresholdHandlers(mux *http.ServeMux, sf *service.ServiceFactory, logg
 		return err
 	}
 
-	// Define the Threshold-specific routes and handlers
-	// mux.HandleFunc("/threshold", func(w http.ResponseWriter, r *http.Request) {
-	// 	if r.Method == "POST" {
-	// 		data.PostThresholdHandler(w, r, logger, ds)
-	// 	} else if r.Method == "PUT" {
-	// 		data.UpdateThresholdHandler(w, r, logger, ds)
-	// 	} else {
-	// 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-	// 	}
-	// })
-
 	mux.HandleFunc("/threshold", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			data.PostThresholdHandler(w, r, logger, ds)
-		} else if r.Method == "PUT" {
-			data.UpdateThresholdHandler(w, r, logger, ds)
 		} else if r.Method == "GET" {
-			// Add the handler for getting all thresholds
 			data.GetThresholdHandler(w, r, logger, ds)
 		} else {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})
-	
 
-	// Handle DELETE and GET with ID for thresholds
+
 	mux.HandleFunc("/threshold/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "DELETE" {
 			data.DeleteThresholdHandler(w, r, logger, ds)
 		} else if r.Method == "GET" {
 			data.GetThresholdHandler(w, r, logger, ds)
-		} else {
+		}else if r.Method == "PUT" {
+			data.UpdateThresholdHandler(w, r, logger, ds) // Only handle PUT with ID
+		}else {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		}
 	})

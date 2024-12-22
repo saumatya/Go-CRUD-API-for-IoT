@@ -8,13 +8,20 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
-// UpdateThresholdHandler updates an existing threshold by ID.
 func UpdateThresholdHandler(w http.ResponseWriter, r *http.Request, logger *log.Logger, ds service.DataService) {
-	// Get the ID from the URL query parameter
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	// Get the ID from the URL path
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) < 3 { // Expecting "/threshold/{id}" in URL
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"error": "Invalid URL structure."}`))
+		return
+	}
+
+	id, err := strconv.Atoi(parts[2]) // The ID is the 3rd part of the path
 	if err != nil {
 		// If the ID is invalid, return a 400 Bad Request
 		w.WriteHeader(http.StatusBadRequest)
@@ -22,7 +29,7 @@ func UpdateThresholdHandler(w http.ResponseWriter, r *http.Request, logger *log.
 		return
 	}
 
-	// Set a context with timeout for the request to ensure it doesn't hang indefinitely
+	// Set a context with timeout for the request
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 
@@ -35,7 +42,7 @@ func UpdateThresholdHandler(w http.ResponseWriter, r *http.Request, logger *log.
 		return
 	}
 
-	// Set the ID for the threshold, using the ID passed in URL query
+	// Set the ID for the threshold, using the ID passed in the path
 	threshold.ID = id
 
 	// Call the service method to update the threshold
@@ -56,7 +63,7 @@ func UpdateThresholdHandler(w http.ResponseWriter, r *http.Request, logger *log.
 		}
 	}
 
-	// If update is successful, send a success message
+	// If the update is successful, send a success message
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Threshold updated successfully."}`))
 }
